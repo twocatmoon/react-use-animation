@@ -1,10 +1,7 @@
 import anime from 'animejs'
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
-export type AnimationParameters = {
-    in: Exclude<anime.AnimeAnimParams, 'targets'>
-    out: Exclude<anime.AnimeAnimParams, 'targets'>
-}
+export type AnimationParameters = Exclude<anime.AnimeAnimParams, 'targets'>
 
 export function useAnimation <Element extends HTMLElement> (ref: React.RefObject<Element>, paramsIn: AnimationParameters, paramsOut: AnimationParameters): any
 export function useAnimation <Element extends HTMLElement> (ref: React.RefObject<Element>, targets: string, paramsIn: AnimationParameters, paramsOut: AnimationParameters): any
@@ -82,4 +79,40 @@ export function useAnimation <Element extends HTMLElement> (ref: React.RefObject
         seek,
         getInstance
     }
+}
+
+export function useToggleAnimation <Element extends HTMLElement> (initiallyVisible: boolean, ref: React.RefObject<Element>, paramsIn: AnimationParameters, paramsOut: AnimationParameters): any
+export function useToggleAnimation <Element extends HTMLElement> (initiallyVisible: boolean, ref: React.RefObject<Element>, targets: string, paramsIn: AnimationParameters, paramsOut: AnimationParameters): any
+export function useToggleAnimation <Element extends HTMLElement> (initiallyVisible: boolean, ref: React.RefObject<Element>, targetsOrParamsIn: AnimationParameters | string, paramsInOrParamsOut: AnimationParameters, paramsOutOnly?: AnimationParameters): any {
+    let paramsIn: AnimationParameters = paramsInOrParamsOut
+    let paramsOut: AnimationParameters = paramsOutOnly!
+    let targets: string | undefined
+
+    if (typeof targetsOrParamsIn !== 'string') {
+        paramsOut = paramsInOrParamsOut
+        paramsIn = targetsOrParamsIn
+    } else {
+        targets = targetsOrParamsIn
+    }
+
+    const {
+        playIn,
+        playOut,
+    } = targets 
+        ? useAnimation(ref, targets, paramsIn, paramsOut)
+        : useAnimation(ref, paramsIn, paramsOut)
+
+    const firstRenderRef = useRef(true)
+    const [ visible, setVisible ] = useState(initiallyVisible)
+
+    useEffect(() => {
+        if (firstRenderRef.current) {
+            firstRenderRef.current = false
+            return
+        }
+        if (visible) playIn()
+        else playOut()
+    }, [visible])
+
+    return setVisible
 }
